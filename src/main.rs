@@ -1,12 +1,8 @@
-use std::fmt::Write;
-use std::fs;
-use std::env;
+use std::{fs, fmt::Write, env, path::Path};
 use fs2::free_space;
-use std::path::Path;
 use fs_extra::dir::get_size;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 
-#[derive(Debug)]
 struct Settings { 
     path_to_fill: String,
     origin_file: OriginFile,
@@ -73,7 +69,6 @@ impl Settings {
     }
 }
 
-#[derive(Debug)]
 struct OriginFile {
     extension: String,
     size: u64,
@@ -115,11 +110,13 @@ enum ProgressBarMode {
 }
 
 fn uwuinate(settings: Settings) {
+    // I can almost guarantee not all of these variables need to be mutable.
     let mut counter = 0; // Gets put in file names to avoid duplicates
     let mut total_filled: u64 = 0;
     let mut template = "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})";
     let mut progress_bar_mode = ProgressBarMode::Space;
-    
+
+    // Decide which progress bar template and total_filled metric to use
     let pb_space = match (settings.storage_b, settings.amount_of_files) {
         (Some(storage_b), _) => storage_b,
         (None, Some(amount_of_files)) => {
@@ -129,19 +126,20 @@ fn uwuinate(settings: Settings) {
         },
         (None, None) => settings.space_in_path,
     };
-
+    
     println!("Welcome to the UwUinator v2");
     println!("-- Created by WhoIsConch --");
     println!("Now UwUinating path: {0}", settings.path_to_fill);
     println!("With file: {0}", settings.origin_file.full_path);
-    
+
+    // Construct the progress bar
     let progress_bar = ProgressBar::new(pb_space);
 
     progress_bar.set_style(ProgressStyle::with_template(template)
         .unwrap()
         .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap())
         .progress_chars("#>-"));
-    
+
     loop {
         if let Some(amount) = settings.amount_of_files {
             if counter >= amount {
@@ -155,13 +153,16 @@ fn uwuinate(settings: Settings) {
             }
         }
 
+        // This is almost guaranteed to be unnecessary every loop
         let mut copy = String::clone(&settings.path_to_fill);
         copy.push_str(&("\\".to_owned() + counter.to_string().as_str() + "." + &settings.origin_file.extension));
 
+        // Copy the file
         fs::copy(&settings.origin_file.full_path, &copy).expect("Failed to copy data into file");
         total_filled += settings.origin_file.size;
         counter += 1;
 
+        // Update the progress bar 
         progress_bar.set_position(match progress_bar_mode {
             ProgressBarMode::File => counter,
             ProgressBarMode::Space => total_filled,
@@ -172,9 +173,12 @@ fn uwuinate(settings: Settings) {
 }
 
 fn main() {
+    // Get and validate settings
     let settings = Settings::from_args();
     let valid = settings.validate();
 
+    // Just panic if there's an error for now
+    // This should change later
     if let Err(error) = valid {
         panic!("{error}");
     }
