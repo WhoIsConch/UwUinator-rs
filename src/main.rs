@@ -130,13 +130,18 @@ fn uwuinate(settings: Settings) {
         (None, None) => settings.space_in_path,
     };
 
+    println!("Welcome to the UwUinator v2");
+    println!("-- Created by WhoIsConch --");
+    println!("Now UwUinating path: {0}", settings.path_to_fill);
+    println!("With file: {0}", settings.origin_file.full_path);
+    
     let progress_bar = ProgressBar::new(pb_space);
 
     progress_bar.set_style(ProgressStyle::with_template(template)
         .unwrap()
         .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap())
         .progress_chars("#>-"));
-
+    
     loop {
         if let Some(amount) = settings.amount_of_files {
             if counter >= amount {
