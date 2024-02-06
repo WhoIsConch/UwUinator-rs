@@ -2,6 +2,7 @@ use std::{fs, fmt::Write, env, path::Path};
 use fs2::free_space;
 use fs_extra::dir::get_size;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use nanoid::nanoid;
 
 struct Settings { 
     path_to_fill: String,
@@ -14,6 +15,11 @@ struct Settings {
 impl Settings {
     fn from_args() -> Settings {
         let args: Vec<String> = env::args().collect();
+
+        if args.len() < 2 {
+            panic!("Not enough arguments. Expected path.");
+        }
+
         let path_to_fill = String::clone(&args[1]);
 
         let mut settings = Settings{ 
@@ -153,12 +159,15 @@ fn uwuinate(settings: Settings) {
             }
         }
 
-        // This is almost guaranteed to be unnecessary every loop
-        let mut copy = String::clone(&settings.path_to_fill);
-        copy.push_str(&("\\".to_owned() + counter.to_string().as_str() + "." + &settings.origin_file.extension));
+        let destination = format!("{0}\\{1}.{2}", &settings.path_to_fill, nanoid!(10), &settings.origin_file.extension);
 
         // Copy the file
-        fs::copy(&settings.origin_file.full_path, &copy).expect("Failed to copy data into file");
+        let result = fs::copy(&settings.origin_file.full_path, destination);
+
+        if let Err(_) = result {
+            break;
+        }
+
         total_filled += settings.origin_file.size;
         counter += 1;
 
