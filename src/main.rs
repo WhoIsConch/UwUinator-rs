@@ -15,6 +15,11 @@ struct Settings {
 impl Settings {
     fn from_args() -> Settings {
         let args: Vec<String> = env::args().collect();
+
+        if args.len() < 2 {
+            panic!("Not enough arguments. Expected path.");
+        }
+
         let path_to_fill = String::clone(&args[1]);
 
         let mut settings = Settings{ 
@@ -166,12 +171,12 @@ fn uwuinate(settings: Settings) {
             }
         }
 
-        let destination = format!("{0}\\{1}.{2}", &settings.path_to_fill, nanoid!(10), &settings.origin_file.extension.as_str());
+        let destination = format!("{0}\\{1}.{2}", &settings.path_to_fill, nanoid!(10), &settings.origin_file.extension);
 
         // Copy the file
-        let status = fs::copy(&settings.origin_file.full_path, &destination);
+        let result = fs::copy(&settings.origin_file.full_path, destination);
 
-        if let Err(_) = status {
+        if let Err(_) = result {
             break;
         }
 
