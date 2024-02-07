@@ -2,6 +2,7 @@ use std::{fs, fmt::Write, env, path::Path};
 use fs2::free_space;
 use fs_extra::dir::get_size;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use nanoid::nanoid;
 
 struct Settings { 
     path_to_fill: String,
@@ -63,6 +64,18 @@ impl Settings {
             if (file_amount * self.origin_file.size) > self.space_in_path {
                 return Err("Directory cannot fit that many files in it.");
             }
+        }
+
+        let path_exists = Path::new(&self.path_to_fill).exists();
+
+        if !path_exists {
+            return Err("Directory does not exist.");
+        }
+
+        let file_exists = Path::new(&self.origin_file.full_path).exists();
+
+        if !file_exists {
+            return Err("Origin File does not exist");
         }
 
         Ok(())
@@ -153,12 +166,15 @@ fn uwuinate(settings: Settings) {
             }
         }
 
-        // This is almost guaranteed to be unnecessary every loop
-        let mut copy = String::clone(&settings.path_to_fill);
-        copy.push_str(&("\\".to_owned() + counter.to_string().as_str() + "." + &settings.origin_file.extension));
+        let destination = format!("{0}\\{1}.{2}", &settings.path_to_fill, nanoid!(10), &settings.origin_file.extension.as_str());
 
         // Copy the file
-        fs::copy(&settings.origin_file.full_path, &copy).expect("Failed to copy data into file");
+        let status = fs::copy(&settings.origin_file.full_path, &destination);
+
+        if let Err(_) = status {
+            break;
+        }
+
         total_filled += settings.origin_file.size;
         counter += 1;
 
@@ -169,7 +185,8 @@ fn uwuinate(settings: Settings) {
         });
     }
 
-    progress_bar.finish_with_message("Successfully uwuinated path.");
+    progress_bar.finish();
+    println!("Successfully UwUinated path in {:#?}", progress_bar.elapsed())
 }
 
 fn main() {
