@@ -3,6 +3,9 @@ use fs2::free_space;
 use fs_extra::dir::get_size;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use nanoid::nanoid;
+use crate::errors::PathNotFoundError;
+
+mod errors;
 
 struct Settings { 
     path_to_fill: String,
@@ -94,16 +97,16 @@ struct OriginFile {
 }
 
 impl OriginFile {
-    fn default() -> OriginFile {
+    fn default() -> Result<OriginFile, String> {
         // Gets the default origin file, uwu.png
         let file_path = Path::new("uwu.png");
 
         OriginFile::from_path(file_path)
     }
 
-    fn from_path(path: &Path) -> OriginFile {
+    fn from_path(path: &Path) -> Result<OriginFile, PathNotFoundError> {
         if !path.exists() {
-            panic!("No origin file specified and default file is not found.");
+            return Err(PathNotFoundError)
         }
         // Oh my god there has got to be a better way to do this shit
         let file_extension = path.extension()
@@ -114,11 +117,11 @@ impl OriginFile {
         let str_path = path.to_str().expect("could not get path as string i guess");
         let file_size: u64 = get_size(str_path).expect("Unable to get size of origin file.");
         
-        OriginFile {
+        Ok(OriginFile {
             extension: file_extension.to_string(),
             size: file_size,
             full_path: str_path.to_string(),
-        }
+        })
     }
 }
 
